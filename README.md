@@ -86,4 +86,3 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 ---
 
-For more details, refer to the [Colab Notebook](https://colab.research.google.com/drive/1Gcth1dGuMimPLkRt3jvYn7MTNUUg4rf0).
