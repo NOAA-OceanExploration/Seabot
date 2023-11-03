@@ -1,3 +1,90 @@
+"""
+This script is designed for video processing and classification tasks. It's structured into several sections:
+
+1. ImageDataset Class: 
+    A custom dataset class to handle image data loading and transformations.
+
+2. Frame Extraction and Classification:
+    Functions for extracting frames from a video and classifying them using a pre-trained model.
+
+3. GPT-3 Humanization:
+    Functions to humanize the classification results using the OpenAI GPT-3 model.
+
+4. Real-Time Variant:
+    Functions and setups for real-time video processing and classification.
+
+5. Real-Time Variant + Chat Log:
+    Extensions to the real-time variant, with chat log posting capabilities.
+
+6. SeaBot - Video:
+    Setup for a different model (ViViT) to handle video data, along with training loops and classification logic.
+
+7. SeaBot - Real Time:
+    Real-time classification using a webcam or video stream, leveraging the trained ViViT model.
+
+Dependencies:
+    - PyTorch, torchvision
+    - PIL
+    - OpenAI GPT-3
+    - cv2 (OpenCV)
+    - pafy
+    - requests
+    - glob
+    - (and others as imported in the script)
+
+Usage:
+    Adjust the file paths, model paths, and other configuration settings as per the requirements, and run the script for video processing and classification tasks. Ensure to have the necessary dependencies installed, and API keys set up for GPT-3 interactions.
+    
+"""
+
+
+class ImageDataset(torch.utils.data.Dataset):
+    def __init__(self, file_paths, transform=None):
+        self.file_paths = file_paths
+        self.transform = transform
+
+    def __len__(self):
+        return len(self.file_paths)
+
+    def __getitem__(self, idx):
+        image = Image.open(self.file_paths[idx]).convert("RGB")
+        if self.transform:
+            image = self.transform(image)
+        return image
+
+def extract_frames(video_path, frame_rate=1):
+    # use ffmpeg to extract frames from the video
+    pass  # Fill this in
+
+def classify_frames(video_path, model, frame_rate=1):
+    # Extract frames from the video
+    extract_frames(video_path, frame_rate)
+
+    # Load frames
+    frame_dir = video_path.rsplit('.', 1)[0]
+    frame_files = sorted(glob.glob(frame_dir + '/*.png'))
+    frame_dataset = ImageDataset(frame_files, transform)
+    frame_loader = DataLoader(frame_dataset, batch_size=1)  # Classify one frame at a time
+
+    # Classify frames
+    model.eval()
+    seen_classes = set()
+    first_spotted = {}
+    with torch.no_grad():
+        for i, frame in enumerate(frame_loader):
+            frame = frame.to(device)
+            output = model(frame.unsqueeze(0))
+            _, predicted = torch.max(output.logits.data, 1)
+            predicted_class = predicted.item()
+
+            if predicted_class not in seen_classes:
+                seen_classes.add(predicted_class)
+                timecode = i / frame_rate  # Calculate timecode
+                first_spotted[concepts[predicted_class]] = timecode  # concepts is a list of all the concepts
+
+    return first_spotted
+
+
 # Make sure you have the right API key
 openai.api_key = ''
 
@@ -256,10 +343,10 @@ with open(result_path, "w") as file:
 
 """# SeaBot - Video"""
 
-! pip install einops
-! git clone https://github.com/drv-agwl/ViViT-pytorch.git
-! cp ViViT-pytorch/models.py .
-! cp ViViT-pytorch/main.py .
+#! pip install einops
+#! git clone https://github.com/drv-agwl/ViViT-pytorch.git
+#! cp ViViT-pytorch/models.py .
+#! cp ViViT-pytorch/main.py .
 
 import torch
 import torch.nn.functional as F
