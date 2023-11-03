@@ -28,23 +28,20 @@ pip install transformers torch pytorchvideo ffmpeg-python torchvision tqdm fatho
 
 The project is structured as follows:
 
-1. **Unsupervised Training**: Train a generator to create instances of the distribution of annotation text.
-2. **Video Classification**: Train the video classification model on the distribution of the annotation imagery.
-3. **Pipeline Integration**: Combine both methods into a singular pipeline and then use the actual annotations to derive results.
+1. **Self-supervised Pre-training**: Train a generator to correct modified images as a form of pretraining.
+2. **Supervised Pre-training**: Train a generator to correctly classify images that are from fathomnet.
+3. **Video Classification**: Train the video classification model on the distribution of the annotation imagery.
+4. **Pipeline Integration**: Combine both methods into a singular pipeline and then use the actual annotations to derive results.
 
 ## Usage
 
 ### Fine-tuning Image Vision Model
 
-```python
-from concurrent.futures import ProcessPoolExecutor
-from PIL import Image
-# ... (rest of the imports)
-```
-
 Run the following command to start the fine-tuning process:
 
 ```bash
+install.sh
+python pre_training.py
 python fine_tuning.py
 ```
 
