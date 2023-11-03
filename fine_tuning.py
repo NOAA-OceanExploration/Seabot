@@ -19,14 +19,7 @@ Parameters:
 - old_model_path (str): Path to the pre-trained model for fine-tuning.
 """
 
-from PIL import Image
-from torch import nn, optim
-from torch.utils.data import DataLoader, Dataset
-from torchvision import transforms
-from transformers import ViTForImageClassification
-from fathomnet.api import images, boundingboxes
-from tqdm import tqdm
-
+import boto3
 import glob
 import numpy as np
 import os
@@ -34,13 +27,28 @@ import re
 import requests
 import torch
 import wandb
+from PIL import Image
+from torch import nn, optim
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
+from transformers import ViTForImageClassification
+from tqdm import tqdm
+
+# Setup AWS S3
+s3 = boto3.resource(
+    service_name='s3',
+    region_name='your-region',
+    aws_access_key_id='your-access-key-id',
+    aws_secret_access_key='your-secret-access-key'
+)
+bucket_name = 'your-bucket-name'
+prefix = 'FathomNet/Data'
 
 # Define the custom dataset class for handling FathomNet data
 class FathomNetDataset(Dataset):
-    def __init__(self, fathomnet_root_path, concepts, transform=None):
+    def __init__(self, concepts, transform=None):
         self.transform = transform
         self.images_info = []
-        self.image_dir = fathomnet_root_path
         self.concepts = concepts
         self.concept_to_index = {concept: i for i, concept in enumerate(concepts)}
 
@@ -48,59 +56,33 @@ class FathomNetDataset(Dataset):
 
         # Fetch image data for each concept and save the information
         for concept in concepts:
-            try:
-                images_info = images.find_by_concept(concept)
-                self.images_info.extend(images_info)
-            except ValueError as ve:
-                print(f"Error fetching image data for concept {concept}: {ve}")
-                continue
+            # Adjust this part to fetch data from your data source
+            pass
 
         # Sort images info to ensure consistent order across different runs
         self.images_info.sort(key=lambda x: x.uuid)
 
-        # Create directory if it doesn't exist
-        os.makedirs(self.image_dir, exist_ok=True)
-
-        # Download images for each image info and save it to disk
-        for image_info in tqdm(self.images_info, desc="Downloading images", unit="image"):
-          image_url = image_info.url
-          image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
-
-          # Download only if image doesn't already exist
-          if not os.path.exists(image_path):
-              try:
-                  image_data = requests.get(image_url).content
-                  with open(image_path, 'wb') as handler:
-                      handler.write(image_data)
-              except ValueError as ve:
-                  print(f"Error downloading image from {image_url}: {ve}")
-                  continue
-
-    # Get the number of images in the dataset
     def __len__(self):
         return len(self.images_info)
 
-    # Fetch an image and its label vector by index
     def __getitem__(self, idx):
-      try:
-          image_info = self.images_info[idx]
-          image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
-          image = Image.open(image_path).convert('RGB')
+        temp_path = '/tmp/temp_image.jpg'
+        image_info = self.images_info[idx]
+        image_key = f"{prefix}/{image_info.uuid}.jpg"
+        s3.Bucket(bucket_name).download_file(image_key, temp_path)
+        image = Image.open(temp_path).convert('RGB')
 
-          # Create label vector
-          labels_vector = torch.zeros(len(self.concepts))
-          for box in image_info.boundingBoxes:
+        # Create label vector
+        labels_vector = torch.zeros(len(self.concepts))
+        for box in image_info.boundingBoxes:
             if box.concept in self.concept_to_index:
-              labels_vector[self.concept_to_index[box.concept]] = 1
+                labels_vector[self.concept_to_index[box.concept]] = 1
 
-          # Apply transformations if any
-          if self.transform:
+        # Apply transformations if any
+        if self.transform:
             image = self.transform(image)
 
-          return image, labels_vector
-      except (IOError, OSError):
-          print(f"Error reading image {image_path}. Skipping.")
-          return None, None
+        return image, labels_vector
 
 def collate_fn(batch):
     # Filter out the (None, None) entries from the batch
@@ -116,7 +98,7 @@ def collate_fn(batch):
 
     return images, labels_vector
 
-def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
+def load_and_train_model(model_root_path, old_model_path):
     # Define a transformation that resizes images to 224x224 pixels and then converts them to tensors
     transform = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -127,7 +109,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     concepts = boundingboxes.find_concepts()
 
     # Create a dataset with the given concepts and the defined transform
-    dataset = FathomNetDataset(fathomnet_root_path, concepts, transform=transform)
+    dataset = FathomNetDataset(concepts, transform=transform)
 
     # Calculate the sizes for the training and validation datasets
     train_size = int(0.8 * len(dataset))
@@ -152,7 +134,9 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
         param.requires_grad = True
 
     # Load the pre-trained model parameters for further training
-    model.load_state_dict(torch.load(old_model_path))
+    temp_old_model_path = '/tmp/temp_old_model.pth'
+    s3.Bucket(bucket_name).download_file(old_model_path, temp_old_model_path)
+    model.load_state_dict(torch.load(temp_old_model_path))
     print("Loaded the d2 model parameters for further training")
 
     # Replace the classifier again, this time with the number of concept classes
@@ -176,7 +160,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader), epochs=num_epochs)
 
     # Define a folder to store checkpoints
-    checkpoint_folder = os.path.join(model_root_path, 'fn_checkpoints')
+    checkpoint_folder = os.path.join(prefix, 'fn_checkpoints')
 
     # Make sure the checkpoint folder exists
     os.makedirs(checkpoint_folder, exist_ok=True)
@@ -186,12 +170,15 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
 
     # Define a function to load the latest checkpoint
     def load_latest_checkpoint():
-        checkpoints = glob.glob(os.path.join(checkpoint_folder, "*.pth"))
-        checkpoints.sort(key=lambda x: [int(num) for num in re.findall(r'\d+', x)], reverse=True) # Sorting based on epoch and batch number
+        s3_client = boto3.client('s3')
+        checkpoints = [obj.key for obj in s3.Bucket(bucket_name).objects.filter(Prefix=checkpoint_folder)]
+        checkpoints.sort(key=lambda x: s3_client.head_object(Bucket=bucket_name, Key=x)['LastModified'])
 
         if checkpoints:
-            latest_checkpoint_path = checkpoints[0]
-            checkpoint = torch.load(latest_checkpoint_path)
+            latest_checkpoint_path = checkpoints[-1]
+            temp_checkpoint_path = '/tmp/temp_checkpoint.pth'
+            s3.Bucket(bucket_name).download_file(latest_checkpoint_path, temp_checkpoint_path)
+            checkpoint = torch.load(temp_checkpoint_path)
             model.load_state_dict(checkpoint['model_state_dict'])
             optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
             scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
@@ -203,7 +190,6 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
         else:
             print("No Checkpoint found!!")
             return 0, 0, np.inf
-
 
     # Define the loss function as binary cross-entropy with logits
     criterion = nn.BCEWithLogitsLoss()
@@ -238,6 +224,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
 
                 if (batch_idx + 1) % save_freq == 0:
                     checkpoint_path = os.path.join(checkpoint_folder, f'fn_checkpoint_{epoch + 1}_{batch_idx + 1}.pth')
+                    temp_checkpoint_path = '/tmp/temp_checkpoint.pth'
                     torch.save({
                         'epoch': epoch,
                         'batch': batch_idx,
@@ -246,7 +233,8 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
                         'scheduler_state_dict': scheduler.state_dict(),
                         'loss': loss,
                         'best_loss': best_loss,
-                    }, checkpoint_path)
+                    }, temp_checkpoint_path)
+                    s3.Bucket(bucket_name).upload_file(temp_checkpoint_path, checkpoint_path)
                     print(f'Saved model checkpoint at {checkpoint_path}')
 
             epoch_loss = running_loss / len(train_loader.dataset)
@@ -266,8 +254,12 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     start_epoch, start_batch, best_loss = load_latest_checkpoint()
     train_loop(start_epoch, start_batch, best_loss)
 
+# Set model_root_path and old_model_path as parameters to be passed to the function
+old_model_path = os.path.join(prefix, 'd2_fine_tuned_model.pt')
+model_root_path = prefix
+load_and_train_model(model_root_path, old_model_path)
 
-# Set the fathomnet_root_path and model_root_path as parameters to be passed to the function
-old_model_path = os.path.join(model_root_path, 'd2_fine_tuned_model.pt')
-load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)
-torch.save(model.state_dict(), os.path.join(model_root_path, 'fn_trained_model.pth'))
+# Save the fine-tuned model to S3
+temp_model_path = '/tmp/fn_trained_model.pth'
+torch.save(model.state_dict(), temp_model_path)
+s3.Bucket(bucket_name).upload_file(temp_model_path, os.path.join(model_root_path, 'fn_trained_model.pth'))
