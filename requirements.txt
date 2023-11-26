@@ -1,5 +1,7 @@
 transformers
 torch
+torchvision
+wandb
 pytorchvideo
 ffmpeg-python
 torchvision
@@ -10,3 +12,4 @@ wandb
 pafy
 boto3
 ffmpeg
+ffmpeg-python
