@@ -9,3 +9,4 @@ openai
 wandb
 pafy
 boto3
+ffmpeg
