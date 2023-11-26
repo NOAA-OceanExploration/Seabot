@@ -8,3 +8,4 @@ fathomnet
 openai
 wandb
 pafy
+boto3
