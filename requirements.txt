@@ -1,10 +1,10 @@
-pip install transformers
-pip install torch
-pip install pytorchvideo
-pip install ffmpeg-python
-pip install torchvision
-pip install tqdm
-pip install fathomnet
-pip install openai
-pip install wandb
-pip install pafy
+transformers
+torch
+pytorchvideo
+ffmpeg-python
+torchvision
+tqdm
+fathomnet
+openai
+wandb
+pafy
