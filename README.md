@@ -18,6 +18,8 @@ SeaBot is a machine learning pipeline that trains both an image classification m
 
 ## Installation
 
+Requires: sudo apt install ffmpeg
+
 Clone the repository and navigate to the project directory. Run the following commands to install the required dependencies:
 
 ```bash
