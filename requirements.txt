@@ -13,4 +13,3 @@ pafy
 boto3
 ffmpeg
 ffmpeg-python
-scikit-learn
