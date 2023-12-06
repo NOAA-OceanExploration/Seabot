@@ -206,7 +206,7 @@ def train_loop(start_epoch, start_batch, best_loss, model, optimizer, scheduler,
         print(f'Epoch {epoch+1}: Training Loss: {avg_train_loss}, Validation Loss: {avg_val_loss}')
 
 
-def list_s3_files(bucket_name, prefix):
+def list_s3_files(bucket_name, prefix, extension):
     s3_client = boto3.client('s3')
     files = []
     paginator = s3_client.get_paginator('list_objects_v2')
@@ -215,7 +215,7 @@ def list_s3_files(bucket_name, prefix):
     for page in paginator.paginate(Bucket=bucket_name, Prefix=prefix):
         if 'Contents' in page:
             for item in page['Contents']:
-                if item['Key'].endswith('.mp4'):
+                if item['Key'].endswith(extension):
                     files.append(item['Key'])
 
     return files
@@ -274,12 +274,12 @@ class ImageDataset(Dataset):
 # Main script logic
 if not args.skip_extraction:
     if not os.path.isfile(LOCAL_MODEL_DIR):
-        video_files = list_s3_files(BUCKET_NAME, DATASET_ROOT_PATH)
+        video_files = list_s3_files(BUCKET_NAME, DATASET_ROOT_PATH, extension='.mp4')
         for video_file in tqdm(video_files, desc='Extracting frames'):
             extract_frames(BUCKET_NAME, video_file, LOCAL_VIDEO_DIR)
 
     s3_client = boto3.client('s3')
-    image_keys = list_s3_files(BUCKET_NAME, IMAGE_ROOT_PATH)  # Ensure this function returns the list of keys
+    image_keys = list_s3_files(BUCKET_NAME, IMAGE_ROOT_PATH, extension='.png')  # Ensure this function returns the list of keys
     print(image_keys)
 
     # Split the keys into training and validation sets
