@@ -228,12 +228,6 @@ create_directory(LOCAL_IMAGE_DIR)
 # Initialize S3 session
 s3 = boto3.resource('s3')
 
-# Check S3 paths
-if check_s3_path(s3, BUCKET_NAME, DATASET_ROOT_PATH):
-    print('The directory exists')
-else:
-    print('The directory does not exist')
-
 # Define model, optimizer, scheduler, and criterion
 model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-224')
 model.classifier = nn.Linear(model.config.hidden_size, 4)
@@ -280,7 +274,6 @@ if not os.path.isfile(LOCAL_MODEL_DIR):
 
     s3_client = boto3.client('s3')
     image_keys = list_s3_files(BUCKET_NAME, IMAGE_ROOT_PATH, extension='.png')  # Ensure this function returns the list of keys
-    print(image_keys)
 
     # Split the keys into training and validation sets
     train_keys, val_keys = train_test_split(image_keys, test_size=0.2, random_state=42)
