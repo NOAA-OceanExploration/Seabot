@@ -1,3 +1,4 @@
+import argparse
 import boto3
 import ffmpeg
 import glob
@@ -16,6 +17,10 @@ from transformers import ViTForImageClassification
 from tqdm import tqdm
 
 import hashlib
+
+parser = argparse.ArgumentParser(description="Train image classification model")
+parser.add_argument("--skip_extraction", action="store_true", help="Skip the image extraction step and proceed directly to training")
+args = parser.parse_args()
 
 # Constants and Configurations
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -267,13 +272,15 @@ class ImageDataset(Dataset):
         return rotated_image, rotation
 
 # Main script logic
-if not os.path.isfile(LOCAL_MODEL_DIR):
-    video_files = list_s3_files(BUCKET_NAME, DATASET_ROOT_PATH)
-    for video_file in tqdm(video_files, desc='Extracting frames'):
-        extract_frames(BUCKET_NAME, video_file, LOCAL_VIDEO_DIR)
+if not args.skip_extraction:
+    if not os.path.isfile(LOCAL_MODEL_DIR):
+        video_files = list_s3_files(BUCKET_NAME, DATASET_ROOT_PATH)
+        for video_file in tqdm(video_files, desc='Extracting frames'):
+            extract_frames(BUCKET_NAME, video_file, LOCAL_VIDEO_DIR)
 
     s3_client = boto3.client('s3')
     image_keys = list_s3_files(BUCKET_NAME, IMAGE_ROOT_PATH)  # Ensure this function returns the list of keys
+    print(image_keys)
 
     # Split the keys into training and validation sets
     train_keys, val_keys = train_test_split(image_keys, test_size=0.2, random_state=42)
