@@ -272,8 +272,8 @@ class ImageDataset(Dataset):
         return rotated_image, rotation
 
 # Main script logic
-if not args.skip_extraction:
-    if not os.path.isfile(LOCAL_MODEL_DIR):
+if not os.path.isfile(LOCAL_MODEL_DIR):
+    if not args.skip_extraction:
         video_files = list_s3_files(BUCKET_NAME, DATASET_ROOT_PATH, extension='.mp4')
         for video_file in tqdm(video_files, desc='Extracting frames'):
             extract_frames(BUCKET_NAME, video_file, LOCAL_VIDEO_DIR)
