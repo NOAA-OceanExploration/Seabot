@@ -235,14 +235,6 @@ s3_bucket = 'seabot-d2-storage'
 create_directory(model_root_path)
 create_directory(fathomnet_root_path)
 
-# Save final model to S3 or local, depending on its existence in S3
-if not check_frame_exists_s3(s3_client, s3_bucket, s3_final_model_path):
-    torch.save(model.state_dict(), final_model_path)
-    upload_frame_to_s3(final_model_path, s3_final_model_path, s3_client, s3_bucket)
-    print(f"Model saved to S3 at {s3_final_model_path}")
-else:
-    print("Model already exists in S3. Skipping save.")
-
 # Wandb Configuration
 wandb.init(project="fathomnet-training", entity="your_wandb_entity")
 
@@ -252,3 +244,11 @@ if not args.skip_data_download or not check_frame_exists_s3(s3_client, s3_bucket
     load_and_train_model(model_root_path, args.pretrained_model_path, fathomnet_root_path, args.continue_training, s3_client, s3_bucket)
 else:
     print("Skipping data download. Using existing data for training.")
+
+# Save final model to S3 or local, depending on its existence in S3
+if not check_frame_exists_s3(s3_client, s3_bucket, s3_final_model_path):
+    torch.save(model.state_dict(), final_model_path)
+    upload_frame_to_s3(final_model_path, s3_final_model_path, s3_client, s3_bucket)
+    print(f"Model saved to S3 at {s3_final_model_path}")
+else:
+    print("Model already exists in S3. Skipping save.")
