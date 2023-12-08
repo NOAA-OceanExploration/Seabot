@@ -165,7 +165,8 @@ def main():
     create_directory(model_root_path)
     create_directory(fathomnet_root_path)
 
-    wandb.init(project="fathomnet-training", entity="your_wandb_entity")
+    wandb.login(key=WANDB_KEY)
+    wandb.init(project="seabot", name="fn_finetuning")
 
     model = train_model(args, s3_client, s3_bucket, model_root_path, fathomnet_root_path, concepts)
 
