@@ -1,3 +1,45 @@
+from concurrent.futures import ProcessPoolExecutor
+from PIL import Image
+from random import randint
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+from torch import nn, optim
+from torch.utils.data import DataLoader, Dataset
+from torchvision import transforms
+from transformers import ViTFeatureExtractor, ViTForImageClassification
+from fathomnet.api import images, boundingboxes, taxa
+from tqdm import tqdm
+from collections import Counter
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import ffmpeg
+import glob
+import random
+import numpy as np
+import openai
+import os
+import re
+import requests
+import torch
+import traceback
+import wandb
+
+
+torch.manual_seed(0)
+np.random.seed(0)
+random.seed(0)
+
+wandb.login(key='856878a46a17646e66281426d43c4b77d3f9a00c')
+
+wandb.init(
+    # Set the project where this run will be logged
+    project="seabot",
+    # We pass a run name (otherwise it’ll be randomly assigned, like sunshine-lollypop-10)
+    name=f"fn_finetuning",
+    )
+
 # Define the custom dataset class for handling FathomNet data
 class FathomNetDataset(Dataset):
     def __init__(self, fathomnet_root_path, concepts, transform=None):
@@ -234,11 +276,9 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     start_epoch, start_batch, best_loss = load_latest_checkpoint()
     train_loop(start_epoch, start_batch, best_loss)
 
+model_root_path = ""
+
 final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
 
-if os.path.exists(final_model_path):
-    print("Fully trained model already exists. Skipping training.")
-else:
-    old_model_path = os.path.join(model_root_path, 'd2_fine_tuned_model.pt')
-    load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)
-    torch.save(model.state_dict(), final_model_path)
+load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)
+torch.save(model.state_dict(), final_model_path)
