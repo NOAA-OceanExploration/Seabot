@@ -156,6 +156,7 @@ def main():
     parser.add_argument("--skip_data_download", action="store_true", help="Skip downloading data and use existing data")
     args = parser.parse_args()
 
+    WANDB_KEY = '856878a46a17646e66281426d43c4b77d3f9a00c'
     model_root_path = "SeaBot/FathomNet/Models"
     fathomnet_root_path = "SeaBot/FathomNet/Data"
     s3_client = boto3.client('s3')
