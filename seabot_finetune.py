@@ -280,6 +280,8 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
 model_root_path = ""
 old_model_path = ""
 
+fathomnet_root_path = "/fathomnet"
+
 final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
 
 load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)
