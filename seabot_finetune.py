@@ -212,6 +212,10 @@ def load_and_train_model(model_root_path, pretrained_model_path, fathomnet_root_
     start_epoch, start_batch, best_loss = load_latest_checkpoint()
     train_loop(start_epoch, start_batch, best_loss)
 
+# Paths Configuration
+model_root_path = "SeaBot/FathomNet/Models"
+fathomnet_root_path = "SeaBot/FathomNet/Data"
+
 final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
 s3_final_model_path = f"SeaBot/FathomNet/Models/fn_trained_model.pth"
 
@@ -234,10 +238,6 @@ args = parser.parse_args()
 s3 = boto3.resource('s3')
 s3_client = boto3.client('s3')
 s3_bucket = 'seabot-d2-storage'
-
-# Paths Configuration
-model_root_path = "SeaBot/FathomNet/Models"
-fathomnet_root_path = "SeaBot/FathomNet/Data"
 
 # Ensure necessary directories exist
 create_directory(model_root_path)
