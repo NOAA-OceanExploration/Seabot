@@ -158,7 +158,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
         param.requires_grad = True
 
     # Load the pre-trained model parameters for further training
-    model.load_state_dict(torch.load(old_model_path))
+    #model.load_state_dict(torch.load(old_model_path))
     print("Loaded the d2 model parameters for further training")
 
     # Replace the classifier again, this time with the number of concept classes
@@ -278,6 +278,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     train_loop(start_epoch, start_batch, best_loss)
 
 model_root_path = ""
+old_model_path = ""
 
 final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
 
