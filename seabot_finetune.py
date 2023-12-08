@@ -212,27 +212,19 @@ def load_and_train_model(model_root_path, pretrained_model_path, fathomnet_root_
     start_epoch, start_batch, best_loss = load_latest_checkpoint()
     train_loop(start_epoch, start_batch, best_loss)
 
-# Paths Configuration
-model_root_path = "SeaBot/FathomNet/Models"
-fathomnet_root_path = "SeaBot/FathomNet/Data"
-
-final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
-s3_final_model_path = f"SeaBot/FathomNet/Models/fn_trained_model.pth"
-
-# Save final model to S3 or local, depending on its existence in S3
-if not check_frame_exists_s3(s3_client, s3_bucket, s3_final_model_path):
-    torch.save(model.state_dict(), final_model_path)
-    upload_frame_to_s3(final_model_path, s3_final_model_path, s3_client, s3_bucket)
-    print(f"Model saved to S3 at {s3_final_model_path}")
-else:
-    print("Model already exists in S3. Skipping save.")
-
 # Argument Parsing
 parser = argparse.ArgumentParser(description="Train image classification model on FathomNet data")
 parser.add_argument("--continue_training", action="store_true", help="Continue training from a pre-trained model")
 parser.add_argument("--pretrained_model_path", type=str, help="Path to the pre-trained model")
 parser.add_argument("--skip_data_download", action="store_true", help="Skip downloading data and use existing data")
 args = parser.parse_args()
+
+# Paths Configuration
+model_root_path = "SeaBot/FathomNet/Models"
+fathomnet_root_path = "SeaBot/FathomNet/Data"
+
+final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
+s3_final_model_path = f"SeaBot/FathomNet/Models/fn_trained_model.pth"
 
 # S3 Configuration
 s3 = boto3.resource('s3')
@@ -242,6 +234,14 @@ s3_bucket = 'seabot-d2-storage'
 # Ensure necessary directories exist
 create_directory(model_root_path)
 create_directory(fathomnet_root_path)
+
+# Save final model to S3 or local, depending on its existence in S3
+if not check_frame_exists_s3(s3_client, s3_bucket, s3_final_model_path):
+    torch.save(model.state_dict(), final_model_path)
+    upload_frame_to_s3(final_model_path, s3_final_model_path, s3_client, s3_bucket)
+    print(f"Model saved to S3 at {s3_final_model_path}")
+else:
+    print("Model already exists in S3. Skipping save.")
 
 # Wandb Configuration
 wandb.init(project="fathomnet-training", entity="your_wandb_entity")
