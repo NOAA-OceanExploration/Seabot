@@ -18,6 +18,10 @@ from tqdm import tqdm
 
 import hashlib
 
+# Set the current working directory to the script's directory
+script_directory = os.path.dirname(os.path.realpath(__file__))
+os.chdir(script_directory)
+
 parser = argparse.ArgumentParser(description="Train image classification model")
 parser.add_argument("--skip_extraction", action="store_true", help="Skip the image extraction step and proceed directly to training")
 args = parser.parse_args()
