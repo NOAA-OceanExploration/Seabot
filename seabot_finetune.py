@@ -280,9 +280,16 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
 model_root_path = ""
 old_model_path = ""
 
-fathomnet_root_path = "/fathomnet"
+# Current working directory
+current_working_dir = os.getcwd()
 
-final_model_path = os.path.join(model_root_path, 'fn_trained_model.pth')
+# Relative path for 'fathomnet' directory within the current working directory
+fathomnet_relative_path = "fathomnet"
+
+# Joining the paths
+fathomnet_root_path = os.path.join(current_working_dir, fathomnet_relative_path)
+
+final_model_path = os.path.join(current_working_dir, 'fn_trained_model.pth')
 
 load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)
 torch.save(model.state_dict(), final_model_path)
