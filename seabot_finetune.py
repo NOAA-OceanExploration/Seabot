@@ -176,7 +176,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     no_improve_epoch = 0
 
     # Frequency for saving the model
-    save_freq = 1000
+    save_freq = 1000000
 
     # Replace the StepLR with OneCycleLR
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader), epochs=num_epochs)
