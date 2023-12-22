@@ -283,7 +283,7 @@ if not os.path.isfile(LOCAL_MODEL_DIR):
     # selected_keys = random.sample(image_keys, k=int(0.1 * len(image_keys)))
     
     # Split the selected keys into training and validation sets
-    train_keys, val_keys = train_test_split(image_keys, test_size=0.2, random_state=42)
+    train_keys, val_keys = train_test_split(image_keys, test_size=0.2, random_state=0)
 
     # Initialize the datasets
     train_dataset = ImageDataset(s3_client, BUCKET_NAME, train_keys, TRANSFORM)
