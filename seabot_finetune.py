@@ -1,3 +1,4 @@
+import boto3
 from concurrent.futures import ProcessPoolExecutor
 from PIL import Image
 from random import randint
@@ -26,10 +27,8 @@ import torch
 import traceback
 import wandb
 
-import boto3
-
 BUCKET_NAME = 'seabot-d2-storage'
-MODEL_ROOT_PATH = "SeaBot/Models"
+S3_MODEL_ROOT_PATH = "SeaBot/Models"
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -38,13 +37,7 @@ np.random.seed(0)
 random.seed(0)
 
 wandb.login(key='856878a46a17646e66281426d43c4b77d3f9a00c')
-
-wandb.init(
-    # Set the project where this run will be logged
-    project="seabot",
-    # We pass a run name (otherwise it’ll be randomly assigned, like sunshine-lollypop-10)
-    name=f"fn_finetuning",
-    )
+wandb.init(project="seabot", name=f"fn_finetuning")
 
 def save_model_to_s3(local_model_path, s3_model_path, bucket_name):
     s3_client = boto3.client('s3')
