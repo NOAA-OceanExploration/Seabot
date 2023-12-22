@@ -298,7 +298,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME)
 
 
-model_root_path = ""
+model_root_path = "local_models"
 old_model_path = ""
 
 # Current working directory
