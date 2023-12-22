@@ -26,6 +26,9 @@ import torch
 import traceback
 import wandb
 
+BUCKET_NAME = 'seabot-d2-storage'
+MODEL_ROOT_PATH = "SeaBot/Models"
+
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 torch.manual_seed(0)
@@ -40,6 +43,14 @@ wandb.init(
     # We pass a run name (otherwise it’ll be randomly assigned, like sunshine-lollypop-10)
     name=f"fn_finetuning",
     )
+
+def save_model_to_s3(local_model_path, s3_model_path, bucket_name):
+    s3_client = boto3.client('s3')
+    try:
+        s3_client.upload_file(local_model_path, bucket_name, s3_model_path)
+        print(f"Model successfully uploaded to {s3_model_path} in bucket {bucket_name}")
+    except Exception as e:
+        print(f"Error occurred while uploading model to S3: {e}")
 
 # Define the custom dataset class for handling FathomNet data
 class FathomNetDataset(Dataset):
@@ -176,7 +187,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     no_improve_epoch = 0
 
     # Frequency for saving the model
-    save_freq = 1000000
+    save_freq = 100000
 
     # Replace the StepLR with OneCycleLR
     scheduler = torch.optim.lr_scheduler.OneCycleLR(optimizer, max_lr=0.001, steps_per_epoch=len(train_loader), epochs=num_epochs)
@@ -266,6 +277,12 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
                 best_loss = epoch_loss
                 print(f'New best loss: {best_loss}')
                 no_improve_epoch = 0  # Reset patience
+            
+                # Save the best model to S3
+                best_model_path = os.path.join(checkpoint_folder, 'fn_best_model.pth')
+                torch.save(model.state_dict(), best_model_path)
+                s3_model_path = os.path.join(S3_MODEL_ROOT_PATH, 'fn_best_model.pth')
+                save_model_to_s3(best_model_path, s3_model_path, BUCKET_NAME)
             else:
                 no_improve_epoch += 1
 
@@ -276,6 +293,14 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     # Load the latest checkpoint and start/resume training
     start_epoch, start_batch, best_loss = load_latest_checkpoint()
     train_loop(start_epoch, start_batch, best_loss)
+
+    final_model_path = os.path.join(checkpoint_folder, 'fn_final_trained_model.pth')
+    torch.save(model.state_dict(), final_model_path)
+
+    # Save the final model to S3
+    s3_final_model_path = os.path.join(S3_MODEL_ROOT_PATH, 'fn_final_trained_model.pth')
+    save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME)
+
 
 model_root_path = ""
 old_model_path = ""
@@ -292,4 +317,3 @@ fathomnet_root_path = os.path.join(current_working_dir, fathomnet_relative_path)
 final_model_path = os.path.join(current_working_dir, 'fn_trained_model.pth')
 
 load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)
-torch.save(model.state_dict(), final_model_path)
