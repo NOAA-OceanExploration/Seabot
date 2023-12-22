@@ -26,6 +26,8 @@ import torch
 import traceback
 import wandb
 
+import boto3
+
 BUCKET_NAME = 'seabot-d2-storage'
 MODEL_ROOT_PATH = "SeaBot/Models"
 
