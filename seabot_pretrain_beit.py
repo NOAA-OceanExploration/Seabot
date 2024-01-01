@@ -54,7 +54,7 @@ random.seed(0)
 # Import and setup wandb
 import wandb
 wandb.login(key=WANDB_KEY)
-wandb.init(project="seabot", name="drive_pretraining_AWS_large_EX2304")
+wandb.init(project="seabot", name="drive_pretraining_AWS_large_EX2304_1_beit")
 
 # Helper Functions
 def create_directory(dir_path):
