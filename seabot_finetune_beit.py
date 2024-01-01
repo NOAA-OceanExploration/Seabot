@@ -57,6 +57,8 @@ class FathomNetDataset(Dataset):
         self.concepts = concepts
         self.concept_to_index = {concept: i for i, concept in enumerate(concepts)}
 
+        self.feature_extractor = BeitFeatureExtractor.from_pretrained('microsoft/beit-large-patch16-224')
+
         print("Number of classes in set: " + str(len(concepts)))
 
         # Fetch image data for each concept and save the information
