@@ -190,11 +190,11 @@ def train_loop(start_epoch, start_batch, best_loss, model, optimizer, scheduler,
         # Check for improvement
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            best_model_path = os.path.join(LOCAL_MODEL_DIR, 'best_model.pth')
+            best_model_path = os.path.join(LOCAL_MODEL_DIR, 'best_model_swin.pth')
             torch.save(model.state_dict(), best_model_path)
 
             # Save to S3
-            s3_model_path = os.path.join(MODEL_ROOT_PATH, 'best_model.pth')
+            s3_model_path = os.path.join(MODEL_ROOT_PATH, 'best_model_swin.pth')
             save_model_to_s3(best_model_path, s3_model_path, BUCKET_NAME)
 
             no_improve_epoch = 0
