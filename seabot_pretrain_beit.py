@@ -16,6 +16,8 @@ from torchvision import transforms
 from transformers import ViTForImageClassification
 from tqdm import tqdm
 
+from transformers import BeitFeatureExtractor, BeitForImageClassification
+
 import hashlib
 
 # Set the current working directory to the script's directory
@@ -149,7 +151,8 @@ def train_loop(start_epoch, start_batch, best_loss, model, optimizer, scheduler,
             images, labels = images.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
             outputs = model(images)
-            loss = criterion(outputs.logits, labels)
+            logits = outputs.logits  # Ensure this matches BEiT output format
+            loss = criterion(logits, labels)
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
@@ -233,10 +236,8 @@ create_directory(LOCAL_IMAGE_DIR)
 s3 = boto3.resource('s3')
 
 # Define model, optimizer, scheduler, and criterion
-model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-224')
-model.classifier = nn.Linear(model.config.hidden_size, 4)
-for param in model.parameters():
-    param.requires_grad = True
+feature_extractor = BeitFeatureExtractor.from_pretrained('microsoft/beit-large-patch16-224')
+model = BeitForImageClassification.from_pretrained('microsoft/beit-large-patch16-224')
 model = model.to(DEVICE)
 optimizer = optim.Adam(model.parameters())
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
@@ -249,6 +250,7 @@ class ImageDataset(Dataset):
         self.bucket_name = bucket_name
         self.image_keys = image_keys
         self.transform = transform
+        self.feature_extractor = BeitFeatureExtractor.from_pretrained('microsoft/beit-large-patch16-224')
 
     def __len__(self):
         return len(self.image_keys)
@@ -259,15 +261,18 @@ class ImageDataset(Dataset):
         self.s3_client.download_file(self.bucket_name, image_key, image_path)
 
         with Image.open(image_path) as img:
+            # Optional rotation augmentation
             rotation = randint(0, 3)
             rotated_image = img.rotate(rotation * 90)
-            if self.transform:
-                rotated_image = self.transform(rotated_image)
+
+            # Preprocess the image using the feature extractor
+            inputs = self.feature_extractor(images=rotated_image, return_tensors="pt")
+            pixel_values = inputs["pixel_values"].squeeze()  # Adjust dimensions if necessary
 
         # Delete the image from local storage after processing
         os.remove(image_path)
 
-        return rotated_image, rotation
+        return pixel_values, rotation
 
 # Main script logic
 if not os.path.isfile(LOCAL_MODEL_DIR):
