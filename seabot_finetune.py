@@ -40,6 +40,15 @@ random.seed(0)
 wandb.login(key='856878a46a17646e66281426d43c4b77d3f9a00c')
 wandb.init(project="seabot", name=f"fn_finetuning")
 
+def download_from_s3(bucket_name, s3_path, local_path):
+    s3_client = boto3.client('s3')
+    try:
+        s3_client.download_file(bucket_name, s3_path, local_path)
+        print(f"Successfully downloaded {s3_path} from S3 bucket {bucket_name} to {local_path}")
+    except Exception as e:
+        print(f"Error occurred while downloading from S3: {e}")
+
+
 def save_model_to_s3(local_model_path, s3_model_path, bucket_name):
     s3_client = boto3.client('s3')
     try:
@@ -47,6 +56,7 @@ def save_model_to_s3(local_model_path, s3_model_path, bucket_name):
         print(f"Model successfully uploaded to {s3_model_path} in bucket {bucket_name}")
     except Exception as e:
         print(f"Error occurred while uploading model to S3: {e}")
+
 
 # Define the custom dataset class for handling FathomNet data
 class FathomNetDataset(Dataset):
