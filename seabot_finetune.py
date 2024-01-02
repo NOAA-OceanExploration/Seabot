@@ -165,9 +165,18 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
         param.requires_grad = True
 
     # Load the pre-trained model parameters for further training
-    if old_model_path != "":
-        model.load_state_dict(torch.load(old_model_path))
-        print("Loaded the d2 model parameters for further training")
+    model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-224')
+
+    # Download and load the pre-trained model parameters for further training
+    if old_model_path:
+        local_model_path = os.path.join(model_root_path, 'best_model_vit.pth')
+        download_from_s3(BUCKET_NAME, old_model_s3_path, local_model_path)
+
+        if os.path.isfile(local_model_path):
+            model.load_state_dict(torch.load(local_model_path))
+            print(f"Loaded the pre-trained model from {local_model_path} for further training.")
+        else:
+            print(f"Pre-trained model file {local_model_path} not found. Using default weights.")
 
     # Replace the classifier again, this time with the number of concept classes
     model.classifier = nn.Linear(model.config.hidden_size, len(concepts))
@@ -300,7 +309,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
 
 
 model_root_path = "local_models"
-old_model_path = ""
+old_model_path = "SeaBot/Models/best_model_vit.pth"
 
 # Current working directory
 current_working_dir = os.getcwd()
