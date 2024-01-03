@@ -38,7 +38,7 @@ np.random.seed(0)
 random.seed(0)
 
 wandb.login(key='856878a46a17646e66281426d43c4b77d3f9a00c')
-wandb.init(project="seabot", name=f"fn_finetuning")
+wandb.init(project="seabot", name=f"fn_finetuning_vit_pretrained")
 
 def download_from_s3(bucket_name, s3_path, local_path):
     s3_client = boto3.client('s3')
