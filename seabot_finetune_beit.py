@@ -101,9 +101,11 @@ class FathomNetDataset(Dataset):
           image_info = self.images_info[idx]
           image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
           image = Image.open(image_path).convert('RGB')
+
+          # Apply the feature extractor directly
           inputs = self.feature_extractor(images=image, return_tensors="pt")
           image = inputs["pixel_values"].squeeze()
-
+          
           # Create label vector
           labels_vector = torch.zeros(len(self.concepts))
           for box in image_info.boundingBoxes:
@@ -115,6 +117,7 @@ class FathomNetDataset(Dataset):
             image = self.transform(image)
 
           return image, labels_vector
+          
       except (IOError, OSError):
           print(f"Error reading image {image_path}. Skipping.")
           return None, None
