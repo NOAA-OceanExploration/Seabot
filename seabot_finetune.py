@@ -180,7 +180,7 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     # Download and load the pre-trained model parameters for further training
     if old_model_path:
         local_model_path = os.path.join(model_root_path, 'best_model_vit.pth')
-        download_from_s3(BUCKET_NAME, old_model_s3_path, local_model_path)
+        download_from_s3(BUCKET_NAME, old_model_path, local_model_path)
 
         if os.path.isfile(local_model_path):
             model.load_state_dict(torch.load(local_model_path))
