@@ -97,30 +97,31 @@ class FathomNetDataset(Dataset):
 
     # Fetch an image and its label vector by index
     def __getitem__(self, idx):
-      try:
-          image_info = self.images_info[idx]
-          image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
-          image = Image.open(image_path).convert('RGB')
+        try:
+            image_info = self.images_info[idx]
+            image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
+            image = Image.open(image_path).convert('RGB')
+    
+            # Apply transformations if any
+            if self.transform:
+                image = self.transform(image)
+    
+            # Apply the feature extractor directly
+            inputs = self.feature_extractor(images=image, return_tensors="pt")
+            image = inputs["pixel_values"].squeeze()
+    
+            # Create label vector
+            labels_vector = torch.zeros(len(self.concepts))
+            for box in image_info.boundingBoxes:
+                if box.concept in self.concept_to_index:
+                    labels_vector[self.concept_to_index[box.concept]] = 1
+    
+            return image, labels_vector
+    
+        except (IOError, OSError):
+            print(f"Error reading image {image_path}. Skipping.")
+            return None, None
 
-          # Apply the feature extractor directly
-          inputs = self.feature_extractor(images=image, return_tensors="pt")
-          image = inputs["pixel_values"].squeeze()
-          
-          # Create label vector
-          labels_vector = torch.zeros(len(self.concepts))
-          for box in image_info.boundingBoxes:
-            if box.concept in self.concept_to_index:
-              labels_vector[self.concept_to_index[box.concept]] = 1
-
-          # Apply transformations if any
-          if self.transform:
-            image = self.transform(image)
-
-          return image, labels_vector
-          
-      except (IOError, OSError):
-          print(f"Error reading image {image_path}. Skipping.")
-          return None, None
 
 def collate_fn(batch):
     # Filter out the (None, None) entries from the batch
