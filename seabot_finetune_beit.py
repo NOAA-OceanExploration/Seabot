@@ -123,6 +123,7 @@ class FathomNetDataset(Dataset):
             return None, None
 
 
+
 def collate_fn(batch):
     # Filter out the (None, None) entries from the batch
     batch = [(image, label) for image, label in batch if image is not None and label is not None]
