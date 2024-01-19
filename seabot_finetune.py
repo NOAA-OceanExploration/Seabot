@@ -39,7 +39,7 @@ import wandb
 from dynaconf import Dynaconf
 
 # Initialize settings
-settings = Dynaconf(settings_files=['settings.toml'])
+settings = Dynaconf(settings_files=['setting.toml'])
 
 # Replace hardcoded values with configuration values
 BUCKET_NAME = settings.BUCKET_NAME
