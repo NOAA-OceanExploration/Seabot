@@ -8,6 +8,7 @@ import random
 import torch
 import traceback
 from PIL import Image
+from tqdm import tqdm
 from random import randint
 from sklearn.model_selection import train_test_split
 from torch import nn, optim
