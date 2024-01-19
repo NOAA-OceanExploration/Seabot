@@ -1,35 +1,53 @@
-import boto3
-from concurrent.futures import ProcessPoolExecutor
+# Standard library imports
+import glob
+import os
+import random
+import re
+import requests
+import traceback
+
+# External libraries for data handling and analysis
+import numpy as np
+import pandas as pd
+from collections import Counter
+
+# Imaging and visualization libraries
 from PIL import Image
-from random import randint
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# Deep learning and machine learning libraries
+import torch
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
 from transformers import ViTFeatureExtractor, ViTForImageClassification
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+
+# FathomNet API for marine biodiversity data
 from fathomnet.api import images, boundingboxes, taxa
+
+# Utilities and tools
 from tqdm import tqdm
-from collections import Counter
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import ffmpeg
-import glob
-import random
-import numpy as np
-import openai
-import os
-import re
-import requests
-import torch
-import traceback
-import wandb
+# Cloud and external services
 import boto3
+import wandb
 
-BUCKET_NAME = 'seabot-d2-storage'
-S3_MODEL_ROOT_PATH = "SeaBot/Models"
+# Import Dynaconf and load configurations
+from dynaconf import Dynaconf
+
+# Initialize settings
+settings = Dynaconf(settings_files=['settings.toml'])
+
+# Replace hardcoded values with configuration values
+BUCKET_NAME = settings.BUCKET_NAME
+S3_MODEL_ROOT_PATH = settings.S3_MODEL_ROOT_PATH
+WANDB_KEY = settings.WANDB_KEY
+MODEL_ROOT_PATH = settings.MODEL_ROOT_PATH
+OLD_MODEL_PATH = settings.OLD_MODEL_PATH
+FATHOMNET_RELATIVE_PATH = settings.FATHOMNET_RELATIVE_PATH
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -37,8 +55,10 @@ torch.manual_seed(0)
 np.random.seed(0)
 random.seed(0)
 
-wandb.login(key='856878a46a17646e66281426d43c4b77d3f9a00c')
-wandb.init(project="seabot", name=f"fn_finetuning_vit_pretrained")
+# Generate a dynamic run name for wandb based on the model name
+run_name = f"fn_finetuning_{settings.MODEL_NAME}_pretrained"
+wandb.login(key=WANDB_KEY)
+wandb.init(project="seabot", name=run_name)
 
 def download_from_s3(bucket_name, s3_path, local_path):
     s3_client = boto3.client('s3')
@@ -47,7 +67,6 @@ def download_from_s3(bucket_name, s3_path, local_path):
         print(f"Successfully downloaded {s3_path} from S3 bucket {bucket_name} to {local_path}")
     except Exception as e:
         print(f"Error occurred while downloading from S3: {e}")
-
 
 def save_model_to_s3(local_model_path, s3_model_path, bucket_name):
     s3_client = boto3.client('s3')
@@ -318,18 +337,10 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME)
 
 
-model_root_path = "local_models"
-old_model_path = "SeaBot/Models/best_model_vit.pth"
-
-# Current working directory
+# Use the configuration values for paths
+model_root_path = MODEL_ROOT_PATH
+old_model_path = OLD_MODEL_PATH
 current_working_dir = os.getcwd()
-
-# Relative path for 'fathomnet' directory within the current working directory
-fathomnet_relative_path = "fathomnet"
-
-# Joining the paths
-fathomnet_root_path = os.path.join(current_working_dir, fathomnet_relative_path)
-
-final_model_path = os.path.join(current_working_dir, 'fn_trained_model_pretrained.pth')
+fathomnet_root_path = os.path.join(current_working_dir, FATHOMNET_RELATIVE_PATH)
 
 load_and_train_model(model_root_path, old_model_path, fathomnet_root_path)

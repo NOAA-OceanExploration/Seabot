@@ -13,46 +13,45 @@ from sklearn.model_selection import train_test_split
 from torch import nn, optim
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
-from transformers import ViTForImageClassification
-from tqdm import tqdm
-
+import timm
 import hashlib
+import wandb
 
-# Set the current working directory to the script's directory
-script_directory = os.path.dirname(os.path.realpath(__file__))
-os.chdir(script_directory)
+# Import Dynaconf and load configurations
+from dynaconf import Dynaconf
 
-parser = argparse.ArgumentParser(description="Train image classification model")
-parser.add_argument("--skip_extraction", action="store_true", help="Skip the image extraction step and proceed directly to training")
-args = parser.parse_args()
+# Initialize settings
+settings = Dynaconf(settings_files=['settings.toml'])
 
-# Constants and Configurations
+# Replace hardcoded values with configuration values
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-WANDB_KEY = '856878a46a17646e66281426d43c4b77d3f9a00c'
-BUCKET_NAME = 'seabot-d2-storage'
-NUM_EPOCHS = 1
-PATIENCE = 1
-SAVE_FREQ = 100000
-LOCAL_MODEL_DIR = 'local_models'
-LOCAL_VIDEO_DIR = 'local_videos'
-LOCAL_IMAGE_DIR = 'local_images'
-DATASET_ROOT_PATH = "SeaBot/Data/EX2304_Compressed"
-IMAGE_ROOT_PATH = "SeaBot/Data/Extracted_Images"
-MODEL_ROOT_PATH = "SeaBot/Models"
+WANDB_KEY = settings.WANDB_KEY
+BUCKET_NAME = settings.BUCKET_NAME
+NUM_EPOCHS = settings.NUM_EPOCHS
+PATIENCE = settings.PATIENCE
+SAVE_FREQ = settings.SAVE_FREQ
+LOCAL_MODEL_DIR = settings.LOCAL_MODEL_DIR
+LOCAL_VIDEO_DIR = settings.LOCAL_VIDEO_DIR
+LOCAL_IMAGE_DIR = settings.LOCAL_IMAGE_DIR
+DATASET_ROOT_PATH = settings.DATASET_ROOT_PATH
+IMAGE_ROOT_PATH = settings.IMAGE_ROOT_PATH
+MODEL_ROOT_PATH = settings.MODEL_ROOT_PATH
 TRANSFORM = transforms.Compose([
     transforms.Resize((224, 224)),
     transforms.ToTensor(),
 ])
+MODEL_NAME = settings.MODEL_NAME
 
 # Set random seeds for reproducibility
 torch.manual_seed(0)
 np.random.seed(0)
 random.seed(0)
 
-# Import and setup wandb
-import wandb
+# Generate a dynamic run name based on the model name
+run_name = f"drive_pretraining_{MODEL_NAME}_EX2304"
+
 wandb.login(key=WANDB_KEY)
-wandb.init(project="seabot", name="drive_pretraining_AWS_large_EX2304_1_vit")
+wandb.init(project="seabot", name=run_name)
 
 # Helper Functions
 def create_directory(dir_path):
@@ -188,11 +187,12 @@ def train_loop(start_epoch, start_batch, best_loss, model, optimizer, scheduler,
         # Check for improvement
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            best_model_path = os.path.join(LOCAL_MODEL_DIR, 'best_model.pth')
+            best_model_filename = f'best_model_{MODEL_NAME}.pth'  # Include model name in the filename
+            best_model_path = os.path.join(LOCAL_MODEL_DIR, best_model_filename)
             torch.save(model.state_dict(), best_model_path)
 
             # Save to S3
-            s3_model_path = os.path.join(MODEL_ROOT_PATH, 'best_model.pth')
+            s3_model_path = os.path.join(MODEL_ROOT_PATH, best_model_filename)
             save_model_to_s3(best_model_path, s3_model_path, BUCKET_NAME)
 
             no_improve_epoch = 0
@@ -233,8 +233,7 @@ create_directory(LOCAL_IMAGE_DIR)
 s3 = boto3.resource('s3')
 
 # Define model, optimizer, scheduler, and criterion
-model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-224')
-model.classifier = nn.Linear(model.config.hidden_size, 4)
+model = timm.create_model(MODEL_NAME, pretrained=True, num_classes=4)  # Adjust num_classes as per your dataset
 for param in model.parameters():
     param.requires_grad = True
 model = model.to(DEVICE)

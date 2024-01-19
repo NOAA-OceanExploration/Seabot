@@ -1,5 +1,6 @@
 import boto3
 import os
+import timm
 import torch
 from torch.utils.data import DataLoader, Dataset
 from torchvision import transforms
@@ -11,11 +12,17 @@ import requests
 from tqdm import tqdm
 import numpy as np
 
-# Constants
-BUCKET_NAME = 'seabot-d2-storage'
-S3_MODEL_PATH = 'SeaBot/Models/fn_final_trained_model_pretrained.pth'
-LOCAL_MODEL_PATH = 'fn_final_trained_model_pretrained.pth'
-FATHOMNET_ROOT_PATH = 'path_to_fathomnet'  # Replace with your FathomNet root path
+# Import Dynaconf and load configurations
+from dynaconf import Dynaconf
+
+# Initialize settings
+settings = Dynaconf(settings_files=['settings.toml'])
+
+# Replace hardcoded values with configuration values
+BUCKET_NAME = settings.BUCKET_NAME
+S3_MODEL_PATH = settings.S3_MODEL_PATH
+LOCAL_MODEL_PATH = settings.LOCAL_MODEL_PATH
+FATHOMNET_ROOT_PATH = settings.FATHOMNET_ROOT_PATH
 
 # Device configuration
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -95,10 +102,8 @@ class FathomNetTestDataset(Dataset):
 
 # Function to load the model
 def load_model(num_labels):
-    model = ViTForImageClassification.from_pretrained(
-        'google/vit-large-patch16-224',
-        num_labels=num_labels,
-    )
+    # Dynamically create the model based on MODEL_NAME and num_labels
+    model = timm.create_model(settings.MODEL_NAME, pretrained=True, num_classes=num_labels)
     model.load_state_dict(torch.load(LOCAL_MODEL_PATH))
     model = model.to(device)
     model.eval()
