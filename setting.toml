@@ -18,5 +18,5 @@ DATASET_ROOT_PATH = "SeaBot/Data/EX2304_Compressed"
 IMAGE_ROOT_PATH = "SeaBot/Data/Extracted_Images"
 TRAINING_MODEL_ROOT_PATH = "SeaBot/Models"
 
-MODEL_NAME = "beit-large-patch16-224"
+MODEL_NAME = "microsoft/beit-large-patch16-224"
 # swin_large_patch4_window7_224, drive_pretraining_AWS_large_EX2304_1_vit, microsoft/beit-large-patch16-224
