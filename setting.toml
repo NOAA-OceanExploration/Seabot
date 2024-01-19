@@ -1,4 +1,4 @@
- BUCKET_NAME = "seabot-d2-storage"
+BUCKET_NAME = "seabot-d2-storage"
 S3_MODEL_ROOT_PATH = "SeaBot/Models"
 WANDB_KEY = "856878a46a17646e66281426d43c4b77d3f9a00c"
 MODEL_ROOT_PATH = "local_models"
