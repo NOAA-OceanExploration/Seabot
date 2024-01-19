@@ -6,6 +6,7 @@ import re
 import requests
 import traceback
 import time
+import timm
 
 # External libraries for data handling and analysis
 import numpy as np
@@ -47,6 +48,7 @@ BUCKET_NAME = settings.BUCKET_NAME
 S3_MODEL_ROOT_PATH = settings.S3_MODEL_ROOT_PATH
 WANDB_KEY = settings.WANDB_KEY
 MODEL_ROOT_PATH = settings.MODEL_ROOT_PATH
+MODEL_NAME = settings.MODEL_NAME
 OLD_MODEL_PATH = settings.OLD_MODEL_PATH
 FATHOMNET_RELATIVE_PATH = settings.FATHOMNET_RELATIVE_PATH
 
@@ -57,7 +59,7 @@ np.random.seed(0)
 random.seed(0)
 
 # Generate a dynamic run name for wandb based on the model name
-run_name = f"fn_finetuning_{settings.MODEL_NAME}_pretrained"
+run_name = f"fn_finetuning_{MODEL_NAME}_pretrained"
 wandb.login(key=WANDB_KEY)
 wandb.init(project="seabot", name=run_name)
 
@@ -195,8 +197,14 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     val_loader = DataLoader(val_dataset, batch_size=32, collate_fn=collate_fn)
 
     # Load the pre-trained Vision Transformer model and replace the classifier with a new one with 4 classes
-    model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-224')
-    model.classifier = nn.Linear(model.config.hidden_size, 4)
+    model = timm.create_model(MODEL_NAME, pretrained=True)
+
+    # Replace the classifier with a new one tailored to the number of classes
+    num_classes = len(concepts)
+    if hasattr(model, 'classifier') and isinstance(model.classifier, nn.Linear):
+        model.classifier = nn.Linear(model.classifier.in_features, num_classes)
+    elif hasattr(model, 'fc') and isinstance(model.fc, nn.Linear):  # For models with 'fc' layer
+        model.fc = nn.Linear(model.fc.in_features, num_classes)
 
     # Unfreeze all layers for training
     for param in model.parameters():
