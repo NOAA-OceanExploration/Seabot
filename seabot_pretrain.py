@@ -21,7 +21,7 @@ import wandb
 from dynaconf import Dynaconf
 
 # Initialize settings
-settings = Dynaconf(settings_files=['settings.toml'])
+settings = Dynaconf(settings_files=['setting.toml'])
 
 # Replace hardcoded values with configuration values
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
