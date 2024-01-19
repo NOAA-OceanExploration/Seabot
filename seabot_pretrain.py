@@ -41,6 +41,7 @@ TRANSFORM = transforms.Compose([
     transforms.ToTensor(),
 ])
 MODEL_NAME = settings.MODEL_NAME
+safe_model_name = MODEL_NAME.replace('/', '_')
 
 # Set random seeds for reproducibility
 torch.manual_seed(0)
@@ -48,7 +49,7 @@ np.random.seed(0)
 random.seed(0)
 
 # Generate a dynamic run name based on the model name
-run_name = f"drive_pretraining_{MODEL_NAME}_EX2304"
+run_name = f"drive_pretraining_{safe_model_name}_EX2304"
 
 wandb.login(key=WANDB_KEY)
 wandb.init(project="seabot", name=run_name)
@@ -187,7 +188,7 @@ def train_loop(start_epoch, start_batch, best_loss, model, optimizer, scheduler,
         # Check for improvement
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
-            best_model_filename = f'best_model_{MODEL_NAME}.pth'  # Include model name in the filename
+            best_model_filename = f'best_model_{safe_model_name}.pth'  # Include model name in the filename
             best_model_path = os.path.join(LOCAL_MODEL_DIR, best_model_filename)
             torch.save(model.state_dict(), best_model_path)
 
