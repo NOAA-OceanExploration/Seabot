@@ -313,10 +313,11 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
                 no_improve_epoch = 0  # Reset patience
             
                 # Save the best model to S3
-                best_model_path = os.path.join(checkpoint_folder, 'fn_best_model_pretrained.pth')
+                best_model_name = f'{settings.MODEL_NAME}_best'
+                best_model_path = os.path.join(checkpoint_folder, f'{best_model_name}.pth')
                 torch.save(model.state_dict(), best_model_path)
-                s3_model_path = os.path.join(S3_MODEL_ROOT_PATH, 'fn_best_model_pretrained.pth')
-                save_model_to_s3(best_model_path, s3_model_path, BUCKET_NAME)
+                s3_model_path = os.path.join(S3_MODEL_ROOT_PATH, f'{best_model_name}.pth')
+                save_model_to_s3(best_model_path, s3_model_path, BUCKET_NAME, best_model_name)
             else:
                 no_improve_epoch += 1
 
