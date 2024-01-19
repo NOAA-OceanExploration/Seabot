@@ -5,6 +5,7 @@ import random
 import re
 import requests
 import traceback
+import time
 
 # External libraries for data handling and analysis
 import numpy as np
@@ -103,19 +104,28 @@ class FathomNetDataset(Dataset):
         os.makedirs(self.image_dir, exist_ok=True)
 
         # Download images for each image info and save it to disk
-        for image_info in tqdm(self.images_info, desc="Downloading images", unit="image"):
-          image_url = image_info.url
-          image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
+        max_retries = 3  # Maximum number of retries for downloading an image
+        retry_delay = 2  # Delay in seconds between retries
 
-          # Download only if image doesn't already exist
-          if not os.path.exists(image_path):
-              try:
-                  image_data = requests.get(image_url).content
-                  with open(image_path, 'wb') as handler:
-                      handler.write(image_data)
-              except ValueError as ve:
-                  print(f"Error downloading image from {image_url}: {ve}")
-                  continue
+        for image_info in tqdm(self.images_info, desc="Downloading images", unit="image"):
+            image_url = image_info.url
+            image_path = os.path.join(self.image_dir, f"{image_info.uuid}.jpg")
+
+            if not os.path.exists(image_path):
+                for attempt in range(max_retries):
+                    try:
+                        image_data = requests.get(image_url).content
+                        with open(image_path, 'wb') as handler:
+                            handler.write(image_data)
+                        break  # Break out of the loop if download is successful
+                    except Exception as e:
+                        print(f"Attempt {attempt + 1} failed for {image_url}: {e}")
+                        if attempt < max_retries - 1:
+                            time.sleep(retry_delay)  # Wait before retrying
+                        else:
+                            print(f"Failed to download image after {max_retries} attempts.")
+                else:
+                    continue 
 
     # Get the number of images in the dataset
     def __len__(self):
