@@ -271,7 +271,7 @@ class ImageDataset(Dataset):
         return rotated_image, rotation
 
 # Main script logic
-skip_extract = False
+skip_extract = True
 if not os.path.isfile(LOCAL_MODEL_DIR):
     if not skip_extract:
         video_files = list_s3_files(BUCKET_NAME, DATASET_ROOT_PATH, extension='.mp4')
