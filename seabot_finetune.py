@@ -191,20 +191,26 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     # Unfreeze all layers for training
     for param in model.parameters():
         param.requires_grad = True
-
+    
+    # Define the model names
+    old_model_name = settings.OLD_MODEL_NAME  # Assuming OLD_MODEL_NAME is defined in settings
+    model_name = settings.MODEL_NAME
+    
     # Load the pre-trained model parameters for further training
     model = ViTForImageClassification.from_pretrained('google/vit-large-patch16-224')
-
+    
     # Download and load the pre-trained model parameters for further training
     if old_model_path:
-        local_model_path = os.path.join(model_root_path, 'best_model_vit.pth')
-        download_from_s3(BUCKET_NAME, old_model_path, local_model_path)
-
-        if os.path.isfile(local_model_path):
-            model.load_state_dict(torch.load(local_model_path))
-            print(f"Loaded the pre-trained model from {local_model_path} for further training.")
+        local_old_model_path = os.path.join(model_root_path, f'{old_model_name}.pth')
+        s3_old_model_path = os.path.join(S3_MODEL_ROOT_PATH, f'{old_model_name}.pth')
+        download_from_s3(BUCKET_NAME, s3_old_model_path, model_root_path, old_model_name)
+    
+        if os.path.isfile(local_old_model_path):
+            model.load_state_dict(torch.load(local_old_model_path))
+            print(f"Loaded the pre-trained model from {local_old_model_path} for further training.")
         else:
-            print(f"Pre-trained model file {local_model_path} not found. Using default weights.")
+            print(f"Pre-trained model file {local_old_model_path} not found. Using default weights.")
+
 
     # Replace the classifier again, this time with the number of concept classes
     model.classifier = nn.Linear(model.config.hidden_size, len(concepts))
