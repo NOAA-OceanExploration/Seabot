@@ -335,13 +335,11 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     start_epoch, start_batch, best_loss = load_latest_checkpoint()
     train_loop(start_epoch, start_batch, best_loss)
 
-    final_model_path = os.path.join(checkpoint_folder, 'fn_final_trained_model_pretrained.pth')
+    final_model_name = f'{settings.MODEL_NAME}_final'
+    final_model_path = os.path.join(checkpoint_folder, f'{final_model_name}.pth')
     torch.save(model.state_dict(), final_model_path)
-
-    # Save the final model to S3
-    s3_final_model_path = os.path.join(S3_MODEL_ROOT_PATH, 'fn_final_trained_model_pretrained.pth')
-    save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME)
-
+    s3_final_model_path = os.path.join(S3_MODEL_ROOT_PATH, f'{final_model_name}.pth')
+    save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME, final_model_name)
 
 # Use the configuration values for paths
 model_root_path = MODEL_ROOT_PATH
