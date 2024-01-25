@@ -146,11 +146,20 @@ def train_loop(start_epoch, start_batch, best_loss, model, optimizer, scheduler,
     for epoch in range(start_epoch, NUM_EPOCHS):
         model.train()
         total_loss = 0
+
         for batch_idx, (images, labels) in enumerate(train_loader):
             images, labels = images.to(DEVICE), labels.to(DEVICE)
             optimizer.zero_grad()
+
+            # Get model outputs
             outputs = model(images)
-            loss = criterion(outputs.logits, labels)
+
+            # If the output is a tensor, use it directly; otherwise, use the logits attribute
+            if isinstance(outputs, torch.Tensor):
+                loss = criterion(outputs, labels)
+            else:
+                loss = criterion(outputs.logits, labels)
+
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
