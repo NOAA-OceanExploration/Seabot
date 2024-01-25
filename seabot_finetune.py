@@ -359,6 +359,26 @@ def load_and_train_model(model_root_path, old_model_path, fathomnet_root_path):
     s3_final_model_path = os.path.join(S3_MODEL_ROOT_PATH, f'{final_model_name}.pth')
     save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME, final_model_name)
 
+# Load the latest checkpoint and start/resume training
+start_epoch, start_batch, best_loss = load_latest_checkpoint()
+train_loop(start_epoch, start_batch, best_loss)
+
+final_model_name = f'{settings.MODEL_NAME}_final'
+final_model_path = os.path.join(checkpoint_folder, f'{final_model_name}.pth')
+torch.save(model.state_dict(), final_model_path)
+s3_final_model_path = os.path.join(S3_MODEL_ROOT_PATH, f'{final_model_name}.pth')
+save_model_to_s3(final_model_path, s3_final_model_path, BUCKET_NAME, final_model_name)
+
+# Define the local model save path using MODEL_ROOT_PATH
+local_model_save_path = os.path.join(MODEL_ROOT_PATH, f'{final_model_name}.pth')
+
+# Make sure the MODEL_ROOT_PATH directory exists
+os.makedirs(MODEL_ROOT_PATH, exist_ok=True)
+
+# Save the model locally to MODEL_ROOT_PATH
+torch.save(model.state_dict(), local_model_save_path)
+print(f'Model successfully saved locally to {local_model_save_path}')
+
 # Use the configuration values for paths
 model_root_path = MODEL_ROOT_PATH
 old_model_path = OLD_MODEL_PATH
