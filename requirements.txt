@@ -16,3 +16,4 @@ ffmpeg-python
 matplotlib
 seaborn
 dynaconf
+Flask
