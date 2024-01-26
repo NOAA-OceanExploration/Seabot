@@ -1,4 +1,5 @@
 import os
+import sys
 import boto3
 from botocore.exceptions import NoCredentialsError
 
@@ -29,21 +30,16 @@ def upload_to_s3(local_file, bucket, s3_path, model_name):
         print("Credentials not available")
         return False
 
-def find_and_upload_model(model_name):
-    """
-    Find a model file in the current working directory and upload it to S3
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: script.py model_name")
+        sys.exit(1)
 
-    :param model_name: Name of the model file (without extension)
-    """
-    current_working_dir = os.getcwd()
+    model_name = sys.argv[1]
     model_file_name = f'{model_name}.pth'
-    model_file_path = os.path.join(current_working_dir, model_file_name)
+    model_file_path = os.path.join(os.getcwd(), model_file_name)
 
     if os.path.exists(model_file_path):
         upload_to_s3(model_file_path, BUCKET_NAME, S3_MODEL_ROOT_PATH, model_name)
     else:
         print(f"Model file {model_file_name} not found in the current working directory.")
-
-# Example usage
-model_name = 'your_model_file_name'  # Replace with your model file name without extension
-find_and_upload_model(model_name)
