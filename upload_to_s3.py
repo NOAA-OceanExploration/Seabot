@@ -2,6 +2,9 @@ import os
 import sys
 import boto3
 from botocore.exceptions import NoCredentialsError
+from dynaconf import Dynaconf
+
+settings = Dynaconf(settings_files=['setting.toml'])
 
 BUCKET_NAME = settings.BUCKET_NAME
 S3_MODEL_ROOT_PATH = settings.S3_MODEL_ROOT_PATH
