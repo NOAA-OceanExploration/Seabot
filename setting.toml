@@ -14,6 +14,7 @@ SAVE_FREQ = 5000
 LOCAL_MODEL_DIR = "local_models"
 LOCAL_VIDEO_DIR = "local_videos"
 LOCAL_IMAGE_DIR = "local_images"
+MODEL_LIBRARY = "aim"
 DATASET_ROOT_PATH = "SeaBot/Data/EX2304_Compressed"
 IMAGE_ROOT_PATH = "SeaBot/Data/Extracted_Images"
 TRAINING_MODEL_ROOT_PATH = "SeaBot/Models"
