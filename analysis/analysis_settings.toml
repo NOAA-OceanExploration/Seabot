@@ -1,1 +1,1 @@
-MODEL_NAME = "vit_finetuned"
+MODEL_NAME = "fn_pretrained_vit"

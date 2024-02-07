@@ -21,10 +21,10 @@ config = toml.load('analysis_settings.toml')
 MODEL_NAME = config['settings']['MODEL_NAME']
 
 # Configuration values
-BUCKET_NAME = 'example-bucket'  # Replace with your actual S3 bucket name
-S3_MODEL_ROOT_PATH = 'models/seabot'  # Replace with your actual S3 model root path
-FATHOMNET_RELATIVE_PATH = 'fathomnet_data'  # Replace with your actual FathomNet relative path
-MODEL_ROOT_PATH = '/path/to/model/root'  # Replace with your actual local model root path
+BUCKET_NAME = 'seabot-d2-storage'  # Replace with your actual S3 bucket name
+S3_MODEL_ROOT_PATH = 'SeaBot/Test_Models/'  # Replace with your actual S3 model root path
+FATHOMNET_RELATIVE_PATH = 'fathomnet'  # Replace with your actual FathomNet relative path
+MODEL_ROOT_PATH = 'local_test_models'  # Replace with your actual local model root path
 
 # Set up device
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
