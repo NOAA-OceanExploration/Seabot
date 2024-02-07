@@ -250,13 +250,27 @@ create_directory(LOCAL_IMAGE_DIR)
 # Initialize S3 session
 s3 = boto3.resource('s3')
 
+def replace_final_layer(model, num_classes):
+    # Attempt to automatically find the final linear layer
+    for name, module in reversed(list(model.named_children())):
+        if hasattr(module, 'in_features'):
+            # Found a linear layer
+            num_features = module.in_features
+            setattr(model, name, nn.Linear(num_features, num_classes))
+            print(f"Replaced final layer: {name}")
+            return model
+        else:
+            # Recurse into children modules if the module is a container
+            if list(module.children()):
+                replace_final_layer(module, num_classes)
+    raise ValueError("No suitable final linear layer found.")
+
 # Define model, optimizer, scheduler, and criterion
 if MODEL_LIBRARY == "timm":
     model = timm.create_model(MODEL_NAME, pretrained=True, num_classes=4)  # Adjust num_classes as per your dataset
 else:
     model = load_pretrained("aim-600M-2B-imgs", backend="torch")
-    num_features = model.classifier.in_features  # This assumes the final layer is named 'classifier' and has the attribute 'in_features'
-    model.classifier = torch.nn.Linear(num_features, 4)
+    model = replace_final_layer(model, 4)
 
 for param in model.parameters():
     param.requires_grad = True
