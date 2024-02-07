@@ -17,3 +17,4 @@ matplotlib
 seaborn
 dynaconf
 Flask
+timm
