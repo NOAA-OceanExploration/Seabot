@@ -250,27 +250,44 @@ create_directory(LOCAL_IMAGE_DIR)
 # Initialize S3 session
 s3 = boto3.resource('s3')
 
-def replace_final_layer(model, num_classes):
-    # Attempt to automatically find the final linear layer
-    for name, module in reversed(list(model.named_children())):
-        if hasattr(module, 'in_features'):
-            # Found a linear layer
-            num_features = module.in_features
-            setattr(model, name, nn.Linear(num_features, num_classes))
-            print(f"Replaced final layer: {name}")
-            return model
+
+def add_linear_layer_at_end(model, num_classes):
+    """
+    Adds a linear layer to the end of the PyTorch model.
+    """
+    # Check if the model is already a Sequential model
+    if isinstance(model, nn.Sequential):
+        # Directly append a new linear layer
+        num_features = list(model.children())[-1].in_features
+        model.add_module('final_linear', nn.Linear(num_features, num_classes))
+    else:
+        # For non-Sequential models, wrap existing model and add a new linear layer
+        # Attempt to infer in_features from the last layer by inspection
+        # This requires knowledge of the model's structure and may need adjustments
+        last_layer = list(model.children())[-1]
+        if hasattr(last_layer, 'out_features'):
+            num_features = last_layer.out_features
+        elif hasattr(last_layer, 'in_features'):
+            num_features = last_layer.in_features
         else:
-            # Recurse into children modules if the module is a container
-            if list(module.children()):
-                replace_final_layer(module, num_classes)
-    raise ValueError("No suitable final linear layer found.")
+            raise ValueError("Unable to infer in_features for the new linear layer.")
+
+        new_model = nn.Sequential(
+            model,
+            nn.Linear(num_features, num_classes)
+        )
+        return new_model
+
+    return model
+
 
 # Define model, optimizer, scheduler, and criterion
 if MODEL_LIBRARY == "timm":
     model = timm.create_model(MODEL_NAME, pretrained=True, num_classes=4)  # Adjust num_classes as per your dataset
 else:
     model = load_pretrained("aim-600M-2B-imgs", backend="torch")
-    model = replace_final_layer(model, 4)
+    num_classes = 4
+    model = add_linear_layer_at_end(model, num_classes)
 
 for param in model.parameters():
     param.requires_grad = True
