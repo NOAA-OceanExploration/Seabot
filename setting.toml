@@ -10,7 +10,7 @@ LOCAL_MODEL_PATH = "fn_final_trained_model_pretrained.pth"
 
 NUM_EPOCHS = 1
 PATIENCE = 1
-SAVE_FREQ = 100000
+SAVE_FREQ = 100
 LOCAL_MODEL_DIR = "local_models"
 LOCAL_VIDEO_DIR = "local_videos"
 LOCAL_IMAGE_DIR = "local_images"
