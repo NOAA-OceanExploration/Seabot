@@ -18,8 +18,14 @@ import timm
 import hashlib
 import wandb
 
+# Import AIM utilities for loading models and data transformations
+from aim.utils import load_pretrained
+from aim.torch.data import val_transforms
+
 # Import Dynaconf and load configurations
 from dynaconf import Dynaconf
+
+TRANSFORM = val_transforms()
 
 # Initialize settings
 settings = Dynaconf(settings_files=['setting.toml'])
@@ -27,6 +33,7 @@ settings = Dynaconf(settings_files=['setting.toml'])
 # Replace hardcoded values with configuration values
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 WANDB_KEY = settings.WANDB_KEY
+MODEL_LIBRARY = settings.MODEL_LIBRARY
 BUCKET_NAME = settings.BUCKET_NAME
 NUM_EPOCHS = settings.NUM_EPOCHS
 PATIENCE = settings.PATIENCE
@@ -244,11 +251,17 @@ create_directory(LOCAL_IMAGE_DIR)
 s3 = boto3.resource('s3')
 
 # Define model, optimizer, scheduler, and criterion
-model = timm.create_model(MODEL_NAME, pretrained=True, num_classes=4)  # Adjust num_classes as per your dataset
+if MODEL_LIBRARY == "timm":
+    model = timm.create_model(MODEL_NAME, pretrained=True, num_classes=4)  # Adjust num_classes as per your dataset
+else:
+    model = load_pretrained("aim-600M-2B-imgs", backend="torch")
+    num_features = model.classifier.in_features  # This assumes the final layer is named 'classifier' and has the attribute 'in_features'
+    model.classifier = torch.nn.Linear(num_features, 4)
+
 for param in model.parameters():
     param.requires_grad = True
 model = model.to(DEVICE)
-optimizer = optim.Adam(model.parameters())
+optimizer = optim.Adam(model.parameters(), lr=0.001)
 scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 criterion = nn.CrossEntropyLoss()
 
