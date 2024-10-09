@@ -280,7 +280,6 @@ def add_linear_layer_at_end(model, num_classes):
 
     return model
 
-
 # Define model, optimizer, scheduler, and criterion
 if MODEL_LIBRARY == "timm":
     model = timm.create_model(MODEL_NAME, pretrained=True, num_classes=4)  # Adjust num_classes as per your dataset

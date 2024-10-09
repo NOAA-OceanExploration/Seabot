@@ -18,3 +18,4 @@ seaborn
 dynaconf
 Flask
 timm
+requests  # For downloading images from the FathomNet API
