@@ -27,7 +27,7 @@ Requires: sudo apt install ffmpeg
 Clone the repository and navigate to the project directory. Run the following commands to install the required dependencies:
 
 ```bash
-pip install transformers torch pytorchvideo ffmpeg-python torchvision tqdm fathomnet openai wandb pafy youtube-dl
+pip install -r requirements.txt
 ```
 
 ## Structure
