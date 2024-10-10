@@ -2,7 +2,7 @@
 SeaBot is an integrated machine learning pipeline designed for underwater video classification and annotation. It employs a two-pronged approach, training both an image classification model and a text generation model simultaneously. The image model classifies underwater entities, while the text model generates human-readable annotations.
 
 ## Current Development Objectives
-- [ ] Fully integrate SeaTube data as pretraining data.
+- [ ] Fully integrate SeaTube data as fine tuning data.
 - [ ] Add object detection to image classification.
 
 ## Image and Video Classification with Text Generation
